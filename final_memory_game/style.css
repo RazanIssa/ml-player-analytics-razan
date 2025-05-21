@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: #121212;
+  color: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.player-input {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.player-input input {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  margin-right: 10px;
+}
+
+.player-input button {
+  padding: 10px 20px;
+  background-color: #03DAC6;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.wrapper {
+  padding: 25px;
+  border-radius: 10px;
+  background: #1E1E1E;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  width: 400px;
+  height: 400px;
+  justify-content: space-between;
+}
+
+.card {
+  width: calc(25% - 10px);
+  height: calc(25% - 10px);
+  list-style: none;
+  perspective: 1000px;
+  position: relative;
+  cursor: pointer;
+}
+
+.card .view {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  border-radius: 7px;
+  background: #2C2C2C;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card .front-view {
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.card .back-view {
+  transform: rotateY(180deg);
+}
+
+.card.flip .front-view {
+  transform: rotateY(180deg);
+}
+
+.card.flip .back-view {
+  transform: rotateY(0deg);
+  z-index: 1;
+}
+
+.card .back-view img {
+  max-width: 70%;
+  max-height: 70%;
+  object-fit: contain;
+}
+
+.card.shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}

@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>لوحة أداء اللاعبين مع رسم بياني</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #fff8f0;
+      color: #333;
+      padding: 40px;
+      direction: rtl;
+      text-align: center;
+    }
+
+    h1 {
+      color: #ff6b6b;
+      font-size: 32px;
+    }
+
+    table {
+      width: 95%;
+      margin: 30px auto;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #ffffff;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 15px;
+    }
+
+    thead {
+      background-color: #ffe4e1;
+    }
+
+    th {
+      color: #d72638;
+    }
+
+    tr:hover {
+      background-color: #fdf0f0;
+    }
+
+    .tag {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: inline-block;
+      font-weight: bold;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    canvas {
+      max-width: 700px;
+      margin: 30px auto;
+    }
+
+    .btn {
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      margin-top: 25px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background-color: #e25555;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📊 تحليل اللاعبين</h1>
+<p id="summary">يتم التحميل...</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>اللاعب</th>
+      <th>الحركات</th>
+      <th>الزمن (ث)</th>
+      <th>الجولة</th>
+      <th>النتيجة</th>
+      <th>التوقع</th>
+    </tr>
+  </thead>
+  <tbody id="data-body"></tbody>
+</table>
+
+<canvas id="chartCanvas"></canvas>
+<p id="tips">🧠 تحليل الأداء قيد المعالجة...</p>
+<button class="btn" onclick="exportCSV()">📥 تصدير النتائج</button>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const data = JSON.parse(localStorage.getItem("playerStats")) || [];
+  const tableBody = document.getElementById("data-body");
+  const summary = document.getElementById("summary");
+  const tips = document.getElementById("tips");
+
+  let totalMoves = 0;
+  let totalTime = 0;
+  let successCount = 0;
+  const chartLabels = [];
+  const chartData = [];
+
+  data.forEach((player, i) => {
+    const tr = document.createElement("tr");
+    const prediction = (player.moves < 50 && player.timeTaken < 60);
+    const predictionText = prediction ? "✔️ متوقع ينجح" : "❌ متوقع يفشل";
+    const predictionClass = prediction ? "success" : "fail";
+
+    if (player.success === 1) successCount++;
+    totalMoves += player.moves;
+    totalTime += player.timeTaken;
+
+    tr.innerHTML = `
+      <td>${player.playerId}</td>
+      <td>${player.moves}</td>
+      <td>${player.timeTaken}</td>
+      <td>${i + 1}</td>
+      <td><span class="tag ${player.success === 1 ? 'success' : 'fail'}">
+        ${player.success === 1 ? '✔️ ناجح' : '❌ فشل'}
+      </span></td>
+      <td><span class="tag ${predictionClass}">${predictionText}</span></td>
+    `;
+    tableBody.appendChild(tr);
+
+    chartLabels.push("لاعب " + player.playerId);
+    chartData.push(player.timeTaken);
+  });
+
+  const avgMoves = (totalMoves / data.length || 0).toFixed(2);
+  const avgTime = (totalTime / data.length || 0).toFixed(2);
+  summary.textContent = `📌 متوسط الحركات: ${avgMoves} | متوسط الوقت: ${avgTime} ثانية`;
+
+  const rate = (successCount / data.length) * 100;
+  if (rate >= 80) {
+    tips.textContent = "🎯 أداء ممتاز!";
+  } else if (rate >= 50) {
+    tips.textContent = "📈 جيد، لكن يمكن التحسين.";
+  } else {
+    tips.textContent = "🛠️ النتائج ضعيفة، حاول التبسيط.";
+  }
+
+  new Chart(document.getElementById("chartCanvas"), {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: '⏱️ الزمن المستغرق لكل لاعب (ثواني)',
+        data: chartData,
+        backgroundColor: '#ff6b6b',
+        borderRadius: 5
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'مقارنة الزمن بين اللاعبين'
+        },
+        legend: {
+          display: true
+        }
+      },
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  function exportCSV() {
+    let csv = "اسم اللاعب,الحركات,الزمن,الجولة,النجاح,التوقع\n";
+    data.forEach((p, i) => {
+      let pred = (p.moves < 50 && p.timeTaken < 60) ? "متوقع ينجح" : "متوقع يفشل";
+      let status = p.success === 1 ? "نجاح" : "فشل";
+      csv += `${p.playerId},${p.moves},${p.timeTaken},${i + 1},${status},${pred}\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "player_stats.csv";
+    link.click();
+  }
+</script>
+
+</body>
+</html>
